@@ -19,9 +19,11 @@ import java.util.Scanner;
 public class system {
 	
 	private List<User> users;
+	private List<String> moviesExist;
 	
 	public system() {
 		users = new ArrayList<User>();
+		moviesExist = new ArrayList<String>();
 		readUsersFromFile();
 	}
 	
@@ -43,7 +45,7 @@ public class system {
 		}
 		
 		String[] conten = content.split("\n");
-		String[] con;
+		String[] con = null;
 		
 		for(int nr = 1; nr < conten.length;nr++) {
 			con = conten[nr].split(";");
@@ -72,13 +74,18 @@ public class system {
 			ui = Integer.parseInt(con[0]);
 			for(User u:users) {
 				if(u.getId() == ui) {
-					u.addMovie(con[1], Double.parseDouble(con[2]));
+					con[1].replaceAll("\"", "");
+					u.addMovie(con[1], Double.parseDouble(con[2])); //
+					if(!moviesExist.contains(con[1]))
+						moviesExist.add(con[1]);
 					break;
 				}
 					
 			}
 		}
-		
+			
+			
+			
 		
 	}
 	
@@ -110,7 +117,7 @@ public class system {
 		return -1;
 	}
 	
-	public List<extraType> createSortedListOfRecomendationEuclidean(int id, int type) {
+	public List<extraType> createSortedListOfRecomendation(int id, int type) {
 		List<extraType> list = new ArrayList<extraType>();
 		List<extraType> listToSend = new ArrayList<extraType>();
 		
@@ -141,6 +148,30 @@ public class system {
 		
 		
 		return listToSend;
+	}
+	
+	public List<extraType> listOfWheightedUsercompared(User u, int type){
+		recomendationCalc calc = new recomendationCalc();
+		
+		List<extraType> listToSend = new ArrayList<extraType>();
+		
+		for(User p : users) {
+			if(u.equals(p))
+				continue;
+			if(type == 1) {
+				listToSend.add(new extraType(p.getId(), calc.euclideanDist(u, p)));
+			}else if(type == 2) {
+				listToSend.add(new extraType(p.getId(), calc.pearsonDist(u, p)));
+			}else {
+				return null;
+			}
+		}
+		
+		return listToSend;
+	}
+	
+	public List<String> getListOfMovies(){
+		return moviesExist;
 	}
 	
 }

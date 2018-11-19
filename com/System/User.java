@@ -48,7 +48,7 @@ public class User implements Serializable {
 	
 	public double getMovieScore(String name) {
 		for(Movie m:movies) {
-			if(name == m.getName())
+			if(name.equals(m.getName()))
 				return m.getScore();
 		}
 		return 0;

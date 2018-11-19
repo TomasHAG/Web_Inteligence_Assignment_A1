@@ -1,6 +1,7 @@
 package com.System;  
 
-import java.io.IOException; 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;  
 import javax.servlet.http.HttpServletResponse; 
 import javax.ws.rs.Consumes; 
@@ -95,7 +96,7 @@ public class UserService {
    }
    
    @GET
-   @Path("/recommend/bestTop/{type}/{person}")
+   @Path("/recommend/bestClosest/{type}/{person}")
    @Produces(MediaType.APPLICATION_ATOM_XML)
    public String recomendedMovie(@PathParam("type") String type, @PathParam("person") String user) {
 	   
@@ -132,13 +133,91 @@ public class UserService {
 				   }
 			   }
 				if(best != null)
-					return "Recomended movie for " + sys.getUser(indexOfUser).getName() + " is: " + best.getName();
+					return "the best recomended movie for " + sys.getUser(indexOfUser).getName() + " is: " + best.getName();
+				
+				
 		   }
 	   }
 	   
 		  
 	   
 	   return "There is no more movies";
+   }
+   
+   @GET
+   @Path("/recommend/top/{type}/{person}")
+   @Produces(MediaType.APPLICATION_ATOM_XML)
+   public String toptreeRecomended(@PathParam("type") String type,@PathParam("person") String user) {
+int indexOfUser;
+	   
+	   try {
+		   indexOfUser = sys.getIndexWithId(Integer.parseInt(user));
+	   }catch(NumberFormatException nfe) {
+		   indexOfUser = sys.getIndexWithName(user);
+	   }
+	   
+	   if(indexOfUser == -1)
+		   return "Error: one of the names do not exsist.";
+	   
+	   List<extraType> List;
+	   String typ;
+	   
+	   if(type.equals("Euclidean") || type.equals("euclidean")) {
+		   List = sys.listOfWheightedUsercompared(sys.getUser(indexOfUser),1);
+		   typ = "Euclidean";
+	   }else if(type.equals("Pearson") || type.equals("pearson") || type.equals("Pearson Correlation") || type.equals("pearson correlation")) {
+		   List = sys.listOfWheightedUsercompared(sys.getUser(indexOfUser),2);
+		   typ = "Pearson Correlation";
+	   }else {
+		   return "That algoritm do not exsist.";
+	   }
+	   
+	   List<movscr> total = new ArrayList<movscr>();
+	   double sum = 0, sum_sim = 0;
+	   
+	   for(String m : sys.getListOfMovies()) {
+		   if(sys.getUser(indexOfUser).hasMovie(m))
+			   continue;
+		   
+		   for(extraType t : List) {
+			   if(sys.getUser(sys.getIndexWithId(t.getId())).hasMovie(m)) {
+				   sum = sum + sys.getUser(sys.getIndexWithId(t.getId())).getMovieScore(m) * t.getvalue();
+				   System.out.println(sys.getUser(sys.getIndexWithId(t.getId())).getMovieScore(m) * t.getvalue());
+				   sum_sim = sum_sim + t.getvalue();
+			   }
+		   }
+		   
+		   if(sum > 0) {
+			   total.add(new movscr(m,sum,sum_sim));
+			   sum = 0;
+			   sum_sim = 0;
+		   }
+	   }
+	   
+	   List<movscr> finalList = new ArrayList<movscr>();
+	   int index = 0;
+	   
+	   for(movscr g : total) {
+		   if(finalList.isEmpty()) {
+			   finalList.add(new movscr(g.getName(), g.getSum()/g.getSum_sim()));
+		   }else {
+			   index = 0;
+			   for(movscr mo : finalList) {
+				   if(mo.getSum() < g.getSum()/g.getSum_sim())    
+					   break;					   
+				   index++;
+			   }
+			   finalList.add(index ,new movscr(g.getName(), g.getSum()/g.getSum_sim()));
+		   }
+		   
+	   }
+	   
+	   String toPrint = "Top 3 recommendations for " + sys.getUser(indexOfUser).getName() + " (" + typ + ")\n\r";
+	   toPrint += "[['" + finalList.get(0).getName() + "','" + finalList.get(0).getSum() + "']";
+	   toPrint += ",['" + finalList.get(1).getName() + "','" + finalList.get(1).getSum() + "']";
+	   toPrint += ",['" + finalList.get(2).getName() + "','" + finalList.get(2).getSum() + "']]";
+	   
+	   return toPrint;
    }
    
 }
