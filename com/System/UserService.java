@@ -39,15 +39,15 @@ public class UserService {
 	   int indexOfUser1, indexOfUser2;
 	   
 	   try {
-		   indexOfUser1 = sys.getIndexWithId(Integer.parseInt(user1)) + 1;
+		   indexOfUser1 = sys.getIndexWithId(Integer.parseInt(user1));
 	   }catch(NumberFormatException nfe) {
-		   indexOfUser1 = sys.getIndexWithName(user1) + 1;
+		   indexOfUser1 = sys.getIndexWithName(user1);
 	   }
 	   
 	   try {
-		   indexOfUser2 = sys.getIndexWithId(Integer.parseInt(user2)) + 1;
+		   indexOfUser2 = sys.getIndexWithId(Integer.parseInt(user2));
 	   }catch(NumberFormatException nfe) {
-		   indexOfUser2 = sys.getIndexWithName(user2) + 1;
+		   indexOfUser2 = sys.getIndexWithName(user2);
 	   }
 	   
 	   
@@ -65,7 +65,7 @@ public class UserService {
    }
    
    @GET
-   @Path("/recommend/best/{pr}")
+   @Path("/recommend/bestTop/{pr}")
    @Produces(MediaType.APPLICATION_ATOM_XML)
    public String recomendate(@PathParam("pr") String user) {
 	   int idOfuser = -1;
@@ -77,14 +77,14 @@ public class UserService {
 	   
 	   String print = "Top three matches for " + sys.getUser(sys.getIndexWithId(idOfuser)).getName() + " (Euclidean): \n\r";
 	   
-	   List<extraType> list = sys.createSortedListOfRecomendationEuclidean(idOfuser,1);
+	   List<extraType> list = sys.createSortedListOfRecomendation(idOfuser,1);
 	   
 	   print += "[(" + sys.getUser(sys.getIndexWithId(list.get(0).getId())).getName() + " : " + list.get(0).getvalue() + "), ";
 	   print += "(" + sys.getUser(sys.getIndexWithId(list.get(1).getId())).getName() + " : " + list.get(1).getvalue() + "), ";
 	   print += "(" + sys.getUser(sys.getIndexWithId(list.get(2).getId())).getName() + " : " + list.get(2).getvalue() + ")]\n\r";
 	   print += "\n\r";
 	   
-	   List<extraType> list2 = sys.createSortedListOfRecomendationEuclidean(idOfuser,2);
+	   List<extraType> list2 = sys.createSortedListOfRecomendation(idOfuser,2);
 	   
 	   print += "Top three matches for " + sys.getUser(sys.getIndexWithId(idOfuser)).getName() + " (Pearson): \n\r";
 	   print += "[(" + sys.getUser(sys.getIndexWithId(list2.get(0).getId())).getName() + " : " + list2.get(0).getvalue() + "), ";
@@ -94,5 +94,51 @@ public class UserService {
 	   return print;
    }
    
+   @GET
+   @Path("/recommend/bestTop/{type}/{person}")
+   @Produces(MediaType.APPLICATION_ATOM_XML)
+   public String recomendedMovie(@PathParam("type") String type, @PathParam("person") String user) {
+	   
+	   int indexOfUser;
+	   
+	   try {
+		   indexOfUser = sys.getIndexWithId(Integer.parseInt(user));
+	   }catch(NumberFormatException nfe) {
+		   indexOfUser = sys.getIndexWithName(user);
+	   }
+	   
+	   if(indexOfUser == -1)
+		   return "Error: one of the names do not exsist.";
+	   
+	   List<extraType> topList;
+	   
+	   if(type.equals("Euclidean") || type.equals("euclidean")) {
+		   topList = sys.createSortedListOfRecomendation(indexOfUser,1);
+	   }else if(type.equals("Pearson") || type.equals("pearson") || type.equals("Pearson Correlation") || type.equals("pearson correlation")) {
+		   topList = sys.createSortedListOfRecomendation(indexOfUser,2);
+	   }else {
+		   return "That algoritm do not exsist.";
+	   }
+	   
+	   Movie best = null;
+	   
+	   for(int nr = 0;nr < topList.size();nr++) {
+		   for(Movie m:sys.getUser(sys.getIndexWithId((topList.get(0).getId()))).allMovies()) {
+			   if(!sys.getUser(indexOfUser).hasMovie(m.getName())){
+				   if(best == null) {
+					   best = m;
+				   }else if(best.getScore() < m.getScore()) {
+					   best = m;
+				   }
+			   }
+				if(best != null)
+					return "Recomended movie for " + sys.getUser(indexOfUser).getName() + " is: " + best.getName();
+		   }
+	   }
+	   
+		  
+	   
+	   return "There is no more movies";
+   }
    
 }
