@@ -1,0 +1,79 @@
+<html>
+<head>
+<style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse:collapse;
+}
+th, td {
+  padding: 5px;
+}
+</style>
+</head>
+<body>
+<p>Chose User:</p>
+<p id="buton"></p>
+<br>
+<p>Chose algorithm:</p>
+<form>
+	<input type="radio" name="type" id="euc" value="Euclidean" checked>Euclidean<br>
+	<input type="radio" name="type" id="pea" value="Pearson">Pearson
+</form>
+<br>
+<table id="out"></table>
+
+
+
+<script>
+loadButtons();
+function loadButtons(){
+	var nr;
+	fetch('rest/UserService/numberOfUsers')
+	.then((res) => res.text())
+	.then((data) => {
+		
+		var n;
+		for(n = 0;n<data;n++){
+			createButton(n);
+		}
+	})
+}
+
+function createButton(index){
+	var nr;
+	fetch('rest/UserService/user/'+index)
+	.then((res) => res.text())
+	.then((data) => {
+		
+		var btn = document.createElement("BUTTON");
+		var t = document.createTextNode(data);
+		btn.appendChild(t);
+		btn.onclick = function(){doit(data)};
+		document.getElementById('buton').appendChild(btn);
+	
+	})
+}
+
+function doit(da){
+	if(document.getElementById("euc").checked){
+		fetch('rest/UserService/recommend/top/euclidean/' + da)
+		.then((res) => res.text())
+		.then((data) => {
+			document.getElementById('out').innerHTML = data;
+		})
+	}
+	
+	if(document.getElementById("pea").checked){
+		fetch('rest/UserService/recommend/top/Pearson/' + da)
+		.then((res) => res.text())
+		.then((data) => {
+			document.getElementById('out').innerHTML = data;
+		})
+	}
+}
+
+//loadXMLDoc('rest/UserService/recommend/Toby/Mick/Pearson');
+</script>
+
+</body>
+</html>
